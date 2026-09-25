@@ -32,7 +32,7 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE TABLE IF NOT EXISTS project_members (
  project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
- role TEXT NOT NULL CHECK(role IN ('owner','researcher','recorder','reviewer','viewer')),
+ role TEXT NOT NULL CHECK(role IN ('owner','researcher','recorder','conservator','reviewer','viewer')),
  joined_at TEXT NOT NULL,
  PRIMARY KEY(project_id,user_id)
 );

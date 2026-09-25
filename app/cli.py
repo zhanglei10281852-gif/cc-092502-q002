@@ -14,10 +14,16 @@ def main() -> int:
     args = parser.parse_args()
     if args.command == "init-db":
         init_db()
+        from app.organics.models import SCHEMA as ORGANIC_SCHEMA
+
+        connection().executescript(ORGANIC_SCHEMA)
         print(json.dumps({"status": "initialized"}, ensure_ascii=False))
         return 0
     if args.command == "check-db":
         init_db()
+        from app.organics.models import SCHEMA as ORGANIC_SCHEMA
+
+        connection().executescript(ORGANIC_SCHEMA)
         db = connection()
         print(json.dumps({"integrity": db.execute("PRAGMA integrity_check").fetchone()[0], "foreign_keys": db.execute("PRAGMA foreign_keys").fetchone()[0], "tables": db.execute("SELECT COUNT(*) FROM sqlite_master WHERE type='table'").fetchone()[0]}, ensure_ascii=False))
         return 0
