@@ -4,7 +4,10 @@ from contextlib import asynccontextmanager
 
 from fastapi import Depends, FastAPI, Header, HTTPException, Query
 
+from app.conservation import ConservationService, init_conservation_db
+from app.conservation_routes import router as conservation_router
 from app.database import close_connection, connection, init_db
+from app.deps import current_user
 from app.schemas import JobCreate, JobFinish, LoginRequest, MemberCreate, ProjectCreate, UserCreate
 from app.service import ResearchService, ServiceError
 
@@ -13,11 +16,14 @@ from app.service import ResearchService, ServiceError
 async def lifespan(app: FastAPI):
     del app
     init_db()
+    init_conservation_db()
+    ConservationService().recover_expired_leases()
     yield
     close_connection()
 
 
 app = FastAPI(title="考古研究协作基础服务", version="1.0.0", lifespan=lifespan)
+app.include_router(conservation_router)
 
 
 @app.exception_handler(ServiceError)
@@ -25,12 +31,6 @@ async def handle_service_error(request, exc: ServiceError):
     del request
     from fastapi.responses import JSONResponse
     return JSONResponse(status_code=exc.status, content={"error": {"code": exc.code, "message": exc.message}})
-
-
-def current_user(authorization: str = Header(...)):
-    if not authorization.startswith("Bearer "):
-        raise HTTPException(401, "缺少 Bearer 会话")
-    return ResearchService().authenticate(authorization[7:])
 
 
 @app.get("/")
@@ -68,7 +68,7 @@ def add_member(project_id: int, payload: MemberCreate, user=Depends(current_user
 def list_audit(project_id: int | None = Query(default=None), user=Depends(current_user)):
     service = ResearchService()
     if project_id is not None:
-        service.require_role(project_id, user["id"], {"owner", "researcher", "reviewer", "viewer"})
+        service.require_role(project_id, user["id"], {"owner", "researcher", "recorder", "reviewer", "viewer", "conservator"})
         rows = connection().execute("SELECT * FROM audit_events WHERE project_id=? ORDER BY id", (project_id,)).fetchall()
     else:
         rows = connection().execute("SELECT * FROM audit_events WHERE actor_id=? ORDER BY id", (user["id"],)).fetchall()

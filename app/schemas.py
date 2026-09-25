@@ -22,7 +22,7 @@ class LoginRequest(BaseModel):
 
 class MemberCreate(BaseModel):
     user_id: int
-    role: str = Field(..., pattern="^(owner|researcher|recorder|reviewer|viewer)$")
+    role: str = Field(..., pattern="^(owner|researcher|recorder|reviewer|viewer|conservator)$")
 
 
 class JobCreate(BaseModel):
